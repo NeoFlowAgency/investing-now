@@ -1,88 +1,139 @@
 "use client";
 
-import { MOCK_DATA } from "@/lib/mock-data";
-import { StatCard } from "@/components/ui/stat-card";
-import { SimpleChart } from "@/components/ui/simple-chart";
-import { DollarSign, TrendingUp, Users, Activity } from "lucide-react";
+import { neoflowData } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/utils";
+import KpiCard from "@/components/kpi-card";
+import Card from "@/components/card";
+import { ChartBar, ChartLine } from "@/components/charts";
+import { cn } from "@/lib/utils";
+import {
+    DollarSign,
+    Users,
+    UserPlus,
+    UserMinus,
+    Activity,
+    TrendingUp,
+} from "lucide-react";
 
 export default function NeoFlowPage() {
-    const data = MOCK_DATA.neoflow;
+    const d = neoflowData;
 
     return (
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">NeoFlow BOS</h2>
-                <p className="text-muted-foreground mt-1">
-                    Business Operating System & SaaS Metrics.
-                </p>
+                <p className="text-sm font-medium text-zinc-500">Stripe Integration</p>
+                <h1 className="text-3xl font-bold tracking-tight text-white">NeoFlow BOS</h1>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                    title="Monthly Recurring Revenue"
-                    value={`$${data.mrr.toLocaleString()}`}
-                    trend="up"
-                    trendValue={`${data.mrrChange}%`}
-                    icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+            {/* KPIs */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <KpiCard
+                    title="MRR"
+                    value={formatCurrency(d.mrr)}
+                    trend={{ value: `+${d.mrrChange}%`, positive: true }}
+                    icon={<DollarSign size={18} />}
                 />
-                <StatCard
-                    title="Active Subscribers"
-                    value={data.activeSubscribers}
-                    description="Total active subscriptions"
-                    icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                <KpiCard
+                    title="ARR"
+                    value={formatCurrency(d.arr)}
+                    icon={<TrendingUp size={18} />}
                 />
-                <StatCard
-                    title="Churn Rate"
-                    value={`${data.churnRate}%`}
-                    trend="down"
-                    trendValue="0.5%"
-                    icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+                <KpiCard
+                    title="Clients Actifs"
+                    value={String(d.activeSubscribers)}
+                    icon={<Users size={18} />}
                 />
-                <StatCard
-                    title="Lifetime Value (LTV)"
-                    value={`$${data.ltv}`}
-                    icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+                <KpiCard
+                    title="Nouveaux"
+                    value={`+${d.newCustomersThisMonth}`}
+                    subtitle="ce mois"
+                    icon={<UserPlus size={18} />}
+                />
+                <KpiCard
+                    title="Churn"
+                    value={`${d.churnRate}%`}
+                    trend={{ value: "-0.5%", positive: true }}
+                    icon={<Activity size={18} />}
+                />
+                <KpiCard
+                    title="LTV"
+                    value={formatCurrency(d.ltv)}
+                    subtitle={`ARPU: ${formatCurrency(d.avgRevenuePerUser)}`}
+                    icon={<UserMinus size={18} />}
                 />
             </div>
 
-            {/* Main Charts & Lists */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            {/* Charts */}
+            <div className="grid gap-4 lg:grid-cols-7">
+                <Card title="Revenus Mensuels" subtitle="Évolution MRR" className="lg:col-span-4">
+                    <ChartBar
+                        data={d.revenueHistory}
+                        dataKeys={[{ key: "revenue", color: "#6366f1" }]}
+                        height={300}
+                    />
+                </Card>
 
-                {/* Revenue Chart */}
-                <div className="col-span-4 rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                    <div className="flex flex-col space-y-1.5 pb-6">
-                        <h3 className="font-semibold leading-none tracking-tight">Revenue History</h3>
-                        <p className="text-sm text-muted-foreground">Monthly revenue over the last 6 months.</p>
-                    </div>
-                    <SimpleChart data={data.revenueHistory} type="bar" categoryKey="month" dataKey="revenue" />
-                </div>
+                <Card title="Croissance Clients" className="lg:col-span-3">
+                    <ChartLine
+                        data={d.revenueHistory}
+                        lines={[{ key: "customers", color: "#06b6d4" }]}
+                        height={300}
+                    />
+                </Card>
+            </div>
 
-                {/* Recent Customers */}
-                <div className="col-span-3 rounded-xl border bg-card text-card-foreground shadow-sm p-6 max-h-[450px] overflow-y-auto">
-                    <div className="flex flex-col space-y-1.5 pb-6">
-                        <h3 className="font-semibold leading-none tracking-tight">Recent Customers</h3>
-                        <p className="text-sm text-muted-foreground">Latest subscription events.</p>
-                    </div>
-                    <div className="space-y-4">
-                        {data.recentCustomers.map((customer) => (
-                            <div key={customer.id} className="flex items-center justify-between border-b pb-4 last:border-0">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium leading-none">{customer.name}</p>
-                                    <p className="text-xs text-muted-foreground">{customer.plan}</p>
+            {/* Events Feed */}
+            <Card title="Activité Récente" subtitle="Nouveaux clients, désabonnements, renouvellements">
+                <div className="divide-y divide-zinc-800/60">
+                    {d.recentEvents.map((event) => (
+                        <div key={event.id} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className={cn(
+                                        "flex h-9 w-9 items-center justify-center rounded-full text-sm",
+                                        event.type === "new" && "bg-emerald-500/10 text-emerald-400",
+                                        event.type === "churned" && "bg-red-500/10 text-red-400",
+                                        event.type === "renewed" && "bg-cyan-500/10 text-cyan-400"
+                                    )}
+                                >
+                                    {event.type === "new" && <UserPlus size={16} />}
+                                    {event.type === "churned" && <UserMinus size={16} />}
+                                    {event.type === "renewed" && <Activity size={16} />}
                                 </div>
-                                <div className={cn(
-                                    "px-2 py-1 rounded-full text-xs font-semibold",
-                                    customer.status === "Active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                )}>
-                                    {customer.status}
+                                <div>
+                                    <p className="text-sm font-medium text-zinc-200">{event.name}</p>
+                                    <p className="text-xs text-zinc-500">
+                                        {event.plan} — {event.date}
+                                    </p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            <div className="text-right">
+                                <p
+                                    className={cn(
+                                        "text-sm font-semibold",
+                                        event.type === "churned" ? "text-red-400" : "text-emerald-400"
+                                    )}
+                                >
+                                    {event.type === "churned" ? "-" : "+"}{formatCurrency(event.amount)}/mo
+                                </p>
+                                <p
+                                    className={cn(
+                                        "text-xs font-medium",
+                                        event.type === "new" && "text-emerald-500",
+                                        event.type === "churned" && "text-red-500",
+                                        event.type === "renewed" && "text-cyan-500"
+                                    )}
+                                >
+                                    {event.type === "new" && "Nouveau client"}
+                                    {event.type === "churned" && "Désabonné"}
+                                    {event.type === "renewed" && "Renouvelé"}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

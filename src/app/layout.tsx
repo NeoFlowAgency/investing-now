@@ -1,26 +1,20 @@
-import { Sidebar } from "@/components/sidebar";
+import type { Metadata } from "next";
+import "./globals.css";
+import Sidebar from "@/components/sidebar";
 
-export const metadata = {
-    title: "Investing Now",
-    description: "Personal Investment & Finance Tracker",
+export const metadata: Metadata = {
+    title: "Investing Now — Personal Finance Dashboard",
+    description: "Track your net worth, SaaS revenue, investments and personal budget in one place.",
 };
 
-export default function RootLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en">
-            <body className="bg-gray-50 text-gray-900 font-sans antialiased">
-                <div className="flex h-screen overflow-hidden">
-                    <Sidebar />
-                    <main className="flex-1 overflow-y-auto pl-64">
-                        <div className="container mx-auto p-8 max-w-7xl">
-                            {children}
-                        </div>
-                    </main>
-                </div>
+        <html lang="fr">
+            <body>
+                <Sidebar />
+                <main className="ml-[260px] min-h-screen overflow-y-auto p-8 transition-all duration-300">
+                    <div className="mx-auto max-w-7xl">{children}</div>
+                </main>
             </body>
         </html>
     );

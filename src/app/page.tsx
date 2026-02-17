@@ -1,103 +1,103 @@
 "use client";
 
-import { MOCK_DATA } from "@/lib/mock-data";
-import { StatCard } from "@/components/ui/stat-card";
-import { SimpleChart } from "@/components/ui/simple-chart";
-import { Globe, Briefcase, TrendingUp, Wallet } from "lucide-react";
+import { globalData } from "@/lib/mock-data";
+import { formatCurrency, formatPercent } from "@/lib/utils";
+import KpiCard from "@/components/kpi-card";
+import Card from "@/components/card";
+import { ChartArea } from "@/components/charts";
+import { Globe, Briefcase, TrendingUp, Wallet, ArrowUpRight } from "lucide-react";
 
-export default function Home() {
-    const { global, neoflow, investments } = MOCK_DATA;
-
-    // Aggregate simulated data for the chart
-    const globalPerformanceData = [
-        { name: "Jan", value: 120000 },
-        { name: "Feb", value: 125000 },
-        { name: "Mar", value: 130000 },
-        { name: "Apr", value: 128000 },
-        { name: "May", value: 135000 },
-        { name: "Jun", value: global.netWorth },
-    ];
+export default function DashboardPage() {
+    const d = globalData;
 
     return (
         <div className="space-y-8">
-            {/* Welcome Section */}
-            <div className="flex items-center justify-between">
+            {/* Header */}
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Vue Globale</h2>
-                    <p className="text-muted-foreground mt-1">
-                        Bienvenue Noakim. Voici la synthèse de votre patrimoine.
-                    </p>
+                    <p className="text-sm font-medium text-zinc-500">Bienvenue, Noakim</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Vue Globale</h1>
                 </div>
-                <div className="text-right hidden md:block">
-                    <p className="text-sm text-muted-foreground">Net Worth Total</p>
-                    <p className="text-3xl font-bold text-primary">${global.netWorth.toLocaleString()}</p>
+                <div className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-[#1a1b23] px-4 py-2">
+                    <span className="text-xs text-zinc-500">Net Worth</span>
+                    <span className="text-xl font-bold text-white">{formatCurrency(d.netWorth)}</span>
+                    <span className="flex items-center text-xs font-semibold text-emerald-400">
+                        <ArrowUpRight size={14} /> {formatPercent(d.netWorthChange)}
+                    </span>
                 </div>
             </div>
 
-            {/* Main KPI Grid */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <StatCard
+            {/* KPIs */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <KpiCard
                     title="Patrimoine Net"
-                    value={`$${global.netWorth.toLocaleString()}`}
-                    trend="up"
-                    trendValue="4.5%"
-                    icon={<Globe className="h-4 w-4 text-blue-500" />}
-                    className="border-l-4 border-l-blue-500"
+                    value={formatCurrency(d.netWorth)}
+                    trend={{ value: formatPercent(d.netWorthChange), positive: true }}
+                    icon={<Globe size={18} />}
                 />
-                <StatCard
-                    title="Business Valuation (SaaS)"
-                    value={`$${global.totalBusinessValue.toLocaleString()}`}
-                    description="Estimation basée sur 10x MRR"
-                    icon={<Briefcase className="h-4 w-4 text-indigo-500" />}
+                <KpiCard
+                    title="Business (SaaS)"
+                    value={formatCurrency(d.totalBusiness)}
+                    subtitle="NeoFlow BOS"
+                    icon={<Briefcase size={18} />}
                 />
-                <StatCard
-                    title="Liquidités & Investissements"
-                    value={`$${(global.totalCash + global.totalInvestments).toLocaleString()}`}
-                    icon={<Wallet className="h-4 w-4 text-green-500" />}
+                <KpiCard
+                    title="Investissements"
+                    value={formatCurrency(d.totalInvestments)}
+                    trend={{ value: "+16.2%", positive: true }}
+                    icon={<TrendingUp size={18} />}
+                />
+                <KpiCard
+                    title="Liquidités"
+                    value={formatCurrency(d.totalCash)}
+                    subtitle="Revolut"
+                    icon={<Wallet size={18} />}
                 />
             </div>
 
-            {/* Charts Section */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* Main Growth Chart */}
-                <div className="col-span-2 rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                    <h3 className="font-semibold mb-6">Évolution du Patrimoine (YTD)</h3>
-                    <SimpleChart data={globalPerformanceData} type="line" height={300} />
-                </div>
+            {/* Charts Row */}
+            <div className="grid gap-4 lg:grid-cols-3">
+                {/* Wealth Evolution */}
+                <Card title="Évolution du Patrimoine" subtitle="6 derniers mois" className="lg:col-span-2">
+                    <ChartArea data={d.wealthHistory} color="#6366f1" height={280} />
+                </Card>
 
-                {/* Quick Distribution */}
-                <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                    <h3 className="font-semibold mb-2">Répartition Macro</h3>
-                    <div className="space-y-4 mt-6">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                                <span>NeoFlow Agency</span>
-                                <span className="font-medium">30%</span>
+                {/* Asset Repartition */}
+                <Card title="Répartition Macro">
+                    <div className="space-y-5 pt-2">
+                        {[
+                            { label: "NeoFlow Agency", pct: 31, color: "bg-indigo-500" },
+                            { label: "Marchés Financiers", pct: 60, color: "bg-emerald-500" },
+                            { label: "Liquidités", pct: 9, color: "bg-cyan-500" },
+                        ].map((item) => (
+                            <div key={item.label} className="space-y-1.5">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-zinc-400">{item.label}</span>
+                                    <span className="font-semibold text-zinc-200">{item.pct}%</span>
+                                </div>
+                                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+                                    <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
+                                </div>
                             </div>
-                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-500 w-[30%]"></div>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                                <span>Marchés Financiers (Bourse/Crypto)</span>
-                                <span className="font-medium">60%</span>
-                            </div>
-                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                <div className="h-full bg-green-500 w-[60%]"></div>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                                <span>Liquidités</span>
-                                <span className="font-medium">10%</span>
-                            </div>
-                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 w-[10%]"></div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
-                </div>
+                </Card>
+            </div>
+
+            {/* Revenue vs Expenses Summary */}
+            <div className="grid gap-4 sm:grid-cols-3">
+                <Card className="flex flex-col items-center justify-center text-center">
+                    <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Revenus / mois</p>
+                    <p className="mt-1 text-3xl font-bold text-emerald-400">{formatCurrency(d.monthlyIncome)}</p>
+                </Card>
+                <Card className="flex flex-col items-center justify-center text-center">
+                    <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Dépenses / mois</p>
+                    <p className="mt-1 text-3xl font-bold text-red-400">{formatCurrency(d.monthlyExpenses)}</p>
+                </Card>
+                <Card className="flex flex-col items-center justify-center text-center">
+                    <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Taux d&apos;épargne</p>
+                    <p className="mt-1 text-3xl font-bold text-cyan-400">{d.savingsRate}%</p>
+                </Card>
             </div>
         </div>
     );

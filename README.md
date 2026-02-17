@@ -1,31 +1,45 @@
-# Investing Now
+# Investing Now 💰
 
-Application de gestion financière personnelle.
+Application de gestion financière personnelle — Patrimoine, Business SaaS, Investissements & Budget.
 
-## ⚠️ Pré-requis : Node.js manquant
+## 🚀 Lancer le projet (GitHub Codespaces)
 
-Il semble que **Node.js** ne soit pas installé sur votre machine. Pour lancer ce projet, vous devez l'installer.
-
-1.  Téléchargez et installez Node.js (LTS) depuis [nodejs.org](https://nodejs.org/).
-2.  Une fois installé, redémarrez votre terminal (ou VS Code).
-
-## Installation & Lancement
-
-Une fois Node.js installé, ouvrez ce dossier dans votre terminal et lancez :
+1. **Aller sur le repo GitHub** : `https://github.com/NeoFlowAgency/investing-now`
+2. **Cliquer sur** `Code` → `Codespaces` → `Create codespace on main`
+3. Attendre que le Codespace se construise (les dépendances s'installent automatiquement grâce au fichier `.devcontainer/devcontainer.json`)
+4. Dans le terminal du Codespace, lancer :
 
 ```bash
-# 1. Installer les dépendances
-npm install
-
-# 2. Lancer le serveur de développement
 npm run dev
 ```
 
-Ouvrez ensuite [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+5. Ouvrir l'URL affichée dans le terminal (forwarded port 3000)
 
-## Architecture
+## 📁 Structure
 
-- **Src** : Tout le code source est dans `/src`.
-- **App** : Dossier principal Next.js (App Router).
-- **Components** : Composants réutilisables.
-- **Lib** : Utilitaires et configuration Supabase.
+```
+src/
+├── app/
+│   ├── layout.tsx          # Layout global (sidebar + content)
+│   ├── page.tsx            # Vue Globale (Dashboard central)
+│   ├── globals.css         # Styles globaux (dark theme)
+│   ├── neoflow/page.tsx    # NeoFlow BOS (métriques Stripe)
+│   ├── investments/page.tsx # Investissements (Actions/ETFs/Crypto)
+│   └── finance/page.tsx    # Finances Personnelles (Budget)
+├── components/
+│   ├── sidebar.tsx         # Navigation latérale
+│   ├── kpi-card.tsx        # Composant KPI réutilisable
+│   ├── card.tsx            # Container card réutilisable
+│   └── charts.tsx          # Graphiques (Area, Bar, Line, Donut)
+└── lib/
+    ├── mock-data.ts        # Données simulées (à remplacer par les APIs)
+    └── utils.ts            # Fonctions utilitaires
+```
+
+## 🛠 Stack
+
+- **Frontend** : Next.js 14 (App Router) + TailwindCSS
+- **Graphiques** : Recharts
+- **Icônes** : Lucide React
+- **Backend (futur)** : Supabase
+- **APIs (futur)** : Stripe, GoCardless (Revolut), Yahoo Finance, CoinGecko

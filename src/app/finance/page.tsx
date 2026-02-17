@@ -1,71 +1,106 @@
 "use client";
 
-import { MOCK_DATA } from "@/lib/mock-data";
-import { StatCard } from "@/components/ui/stat-card";
-import { Wallet, CreditCard, PiggyBank, ArrowDown } from "lucide-react";
+import { financeData } from "@/lib/mock-data";
+import { formatCurrency, cn } from "@/lib/utils";
+import KpiCard from "@/components/kpi-card";
+import Card from "@/components/card";
+import { ChartBar, ChartDonut } from "@/components/charts";
+import { Wallet, CreditCard, PiggyBank, Landmark } from "lucide-react";
 
 export default function FinancePage() {
-    const data = MOCK_DATA.finance;
+    const d = financeData;
 
     return (
         <div className="space-y-8">
+            {/* Header */}
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Finances Personnelles</h2>
-                <p className="text-muted-foreground mt-1">
-                    Gestion du budget et suivi des transactions quotidiennes.
-                </p>
+                <p className="text-sm font-medium text-zinc-500">Budget & Transactions</p>
+                <h1 className="text-3xl font-bold tracking-tight text-white">Finances Personnelles</h1>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard
-                    title="Revenus Mensuels"
-                    value={`$${data.monthlyIncome.toLocaleString()}`}
-                    trend="neutral"
-                    icon={<Wallet className="h-4 w-4 text-blue-500" />}
+            {/* KPIs */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <KpiCard
+                    title="Solde Revolut"
+                    value={formatCurrency(d.balance)}
+                    icon={<Landmark size={18} />}
                 />
-                <StatCard
-                    title="Dépenses Mensuelles"
-                    value={`$${data.monthlyExpenses.toLocaleString()}`}
-                    trend="down"
-                    trendValue="Healthy"
-                    icon={<CreditCard className="h-4 w-4 text-orange-500" />}
+                <KpiCard
+                    title="Revenus / mois"
+                    value={formatCurrency(d.monthlyIncome)}
+                    icon={<Wallet size={18} />}
                 />
-                <StatCard
+                <KpiCard
+                    title="Dépenses / mois"
+                    value={formatCurrency(d.monthlyExpenses)}
+                    icon={<CreditCard size={18} />}
+                />
+                <KpiCard
                     title="Taux d'Épargne"
-                    value={`${data.savingsRate}%`}
-                    trend="up"
-                    description="Target: 50%"
-                    icon={<PiggyBank className="h-4 w-4 text-green-500" />}
+                    value={`${d.savingsRate}%`}
+                    trend={{ value: "+3.2%", positive: true }}
+                    subtitle="vs mois précédent"
+                    icon={<PiggyBank size={18} />}
                 />
             </div>
 
-            {/* Transactions List */}
-            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-semibold">Transactions Récentes</h3>
-                    <button className="text-sm text-blue-600 hover:underline">Voir tout</button>
-                </div>
+            {/* Charts */}
+            <div className="grid gap-4 lg:grid-cols-3">
+                {/* Income vs Expenses */}
+                <Card title="Revenus vs Dépenses" subtitle="6 derniers mois" className="lg:col-span-2">
+                    <ChartBar
+                        data={d.incomeVsExpenses}
+                        dataKeys={[
+                            { key: "income", color: "#10b981" },
+                            { key: "expenses", color: "#ef4444" },
+                        ]}
+                        height={280}
+                    />
+                </Card>
 
-                <div className="space-y-4">
-                    {data.recentTransactions.map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="flex items-center space-x-4">
-                                <div className={`p-2 rounded-full ${tx.amount > 0 ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"}`}>
-                                    {tx.amount > 0 ? <Wallet className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                {/* Spending Categories */}
+                <Card title="Répartition Dépenses">
+                    <ChartDonut data={d.expensesByCategory} height={200} />
+                    <div className="mt-4 space-y-2">
+                        {d.expensesByCategory.map((cat) => (
+                            <div key={cat.name} className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                                    <span className="text-zinc-400">{cat.name}</span>
+                                </div>
+                                <span className="font-medium text-zinc-200">{formatCurrency(cat.value)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            </div>
+
+            {/* Transactions */}
+            <Card title="Transactions Récentes" subtitle="Dernières opérations Revolut">
+                <div className="divide-y divide-zinc-800/60">
+                    {d.transactions.map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800 text-lg">
+                                    {tx.icon}
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium">{tx.merchant}</p>
-                                    <p className="text-xs text-muted-foreground">{tx.date} • {tx.category}</p>
+                                    <p className="text-sm font-medium text-zinc-200">{tx.merchant}</p>
+                                    <p className="text-xs text-zinc-500">{tx.category} · {tx.date}</p>
                                 </div>
                             </div>
-                            <div className={`font-medium ${tx.amount > 0 ? "text-green-600" : "text-gray-900"}`}>
-                                {tx.amount > 0 ? "+" : ""}{tx.amount.toFixed(2)} €
-                            </div>
+                            <p
+                                className={cn(
+                                    "text-sm font-semibold",
+                                    tx.amount >= 0 ? "text-emerald-400" : "text-zinc-300"
+                                )}
+                            >
+                                {tx.amount >= 0 ? "+" : ""}{formatCurrency(tx.amount)}
+                            </p>
                         </div>
                     ))}
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }
