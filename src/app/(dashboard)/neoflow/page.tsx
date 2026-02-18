@@ -1,32 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { neoflowData, type AgencyProject, type AgencyClient } from "@/lib/mock-data";
+import { neoflowData, type AgencyClient } from "@/lib/mock-data";
 import { formatCurrency, cn } from "@/lib/utils";
 import KpiCard from "@/components/kpi-card";
 import Card from "@/components/card";
 import Modal from "@/components/modal";
-import { ChartBar, ChartDonut, ChartArea } from "@/components/charts";
+import { ChartBar, ChartDonut } from "@/components/charts";
+import Link from "next/link";
 import {
     Briefcase,
-    Code2,
     Users,
     TrendingUp,
     Layers,
-    Clock,
+    Timer,
     CircleDollarSign,
     FolderKanban,
-    CheckCircle2,
-    Circle,
-    Mail,
-    Building2,
-    Star,
-    ArrowRight,
-    Percent,
-    Timer,
     Target,
+    Percent,
+    Star,
+    Building2,
+    Mail,
+    ArrowRight,
 } from "lucide-react";
 
+// Reuse labels from before
 const typeLabels: Record<string, { label: string; color: string }> = {
     saas: { label: "SaaS", color: "bg-indigo-500/15 text-indigo-300" },
     app_interne: { label: "App Interne", color: "bg-cyan-500/15 text-cyan-300" },
@@ -43,11 +41,9 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 
 export default function NeoFlowPage() {
     const d = neoflowData;
-    const [selectedProject, setSelectedProject] = useState<AgencyProject | null>(null);
     const [selectedClient, setSelectedClient] = useState<AgencyClient | null>(null);
     const [activeTab, setActiveTab] = useState<"projets" | "clients" | "pipeline">("projets");
 
-    // Stacked bar data for revenue by type
     const revenueStackedData = d.revenueHistory;
 
     return (
@@ -86,32 +82,6 @@ export default function NeoFlowPage() {
                 />
             </div>
 
-            {/* KPIs Row 2 - Agency performance */}
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-                <KpiCard
-                    title="Clients Actifs"
-                    value={String(d.activeClients)}
-                    subtitle={`${d.totalClients} total`}
-                    icon={<Users size={16} />}
-                />
-                <KpiCard
-                    title="Projet Moyen"
-                    value={formatCurrency(d.avgProjectValue)}
-                    icon={<Layers size={16} />}
-                />
-                <KpiCard
-                    title="Taux Utilisation"
-                    value={`${d.utilizationRate}%`}
-                    subtitle="Heures facturées"
-                    icon={<Timer size={16} />}
-                />
-                <KpiCard
-                    title="Marge Moyenne"
-                    value={`${d.avgMargin}%`}
-                    icon={<Percent size={16} />}
-                />
-            </div>
-
             {/* Charts */}
             <div className="grid gap-4 lg:grid-cols-3">
                 <Card title="Revenus par Type" subtitle="6 derniers mois" className="lg:col-span-2">
@@ -124,18 +94,6 @@ export default function NeoFlowPage() {
                         ]}
                         height={280}
                     />
-                    <div className="mt-3 flex flex-wrap gap-4">
-                        {[
-                            { label: "Projets", color: "#8b5cf6" },
-                            { label: "Récurrent", color: "#06b6d4" },
-                            { label: "Maintenance", color: "#10b981" },
-                        ].map((l) => (
-                            <div key={l.label} className="flex items-center gap-1.5 text-xs text-purple-300/50">
-                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: l.color }} />
-                                {l.label}
-                            </div>
-                        ))}
-                    </div>
                 </Card>
 
                 <Card title="Répartition CA">
@@ -172,14 +130,14 @@ export default function NeoFlowPage() {
                 ))}
             </div>
 
-            {/* ─── PROJETS TAB ────────────────────────────────────── */}
+            {/* ─── PROJETS TAB (UPDATED: LINKS TO DETAIL PAGE) ────── */}
             {activeTab === "projets" && (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {d.projects.map((project) => (
-                        <div
+                        <Link
                             key={project.id}
-                            onClick={() => setSelectedProject(project)}
-                            className="card-glow cursor-pointer rounded-2xl p-5 transition-all duration-200 hover:border-purple-500/30 active:scale-[0.98]"
+                            href={`/neoflow/${project.id}`}
+                            className="card-glow block rounded-2xl p-5 transition-all duration-200 hover:border-purple-500/30 active:scale-[0.98]"
                         >
                             <div className="flex items-start gap-3">
                                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-purple-950/50 text-xl">
@@ -200,7 +158,7 @@ export default function NeoFlowPage() {
                                 </span>
                             </div>
 
-                            <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-purple-200/40">{project.description}</p>
+                            <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-purple-200/40 opacity-80">{project.description}</p>
 
                             {/* Progress bar */}
                             {project.hoursEstimated > 0 && (
@@ -218,15 +176,17 @@ export default function NeoFlowPage() {
                                 </div>
                             )}
 
-                            <div className="mt-3 flex items-center justify-between">
+                            <div className="mt-4 flex items-center justify-between border-t border-purple-800/20 pt-3">
                                 <span className="text-lg font-bold text-white">
                                     {project.budget > 0 ? formatCurrency(project.budget) : "Produit interne"}
                                 </span>
-                                {project.monthlyRecurring ? (
-                                    <span className="text-xs font-semibold text-cyan-400">+{formatCurrency(project.monthlyRecurring)}/mo</span>
-                                ) : null}
+                                {project.type === "saas" && (
+                                    <span className="flex items-center gap-1 text-[10px] font-bold text-[#635bff] bg-[#635bff]/10 px-2 py-0.5 rounded-full">
+                                        STRIPE
+                                    </span>
+                                )}
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             )}
@@ -318,117 +278,6 @@ export default function NeoFlowPage() {
                 </div>
             )}
 
-            {/* ─── PROJECT DETAIL MODAL ───────────────────────────── */}
-            <Modal
-                open={!!selectedProject}
-                onClose={() => setSelectedProject(null)}
-                title={selectedProject?.name}
-                subtitle={selectedProject?.client}
-                wide
-            >
-                {selectedProject && (
-                    <div className="space-y-6">
-                        {/* Status badges */}
-                        <div className="flex flex-wrap gap-2">
-                            <span className={cn("rounded-full px-3 py-1 text-xs font-bold", typeLabels[selectedProject.type].color)}>
-                                {typeLabels[selectedProject.type].label}
-                            </span>
-                            <span className={cn("rounded-full px-3 py-1 text-xs font-bold", statusLabels[selectedProject.status].color)}>
-                                {statusLabels[selectedProject.status].label}
-                            </span>
-                            <div className="flex gap-1 ml-auto">
-                                {selectedProject.techStack.map((tech) => (
-                                    <span key={tech} className="rounded-md bg-purple-950/40 px-2 py-0.5 text-[10px] font-medium text-purple-300/60">
-                                        {tech}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <p className="text-sm leading-relaxed text-purple-200/60">{selectedProject.description}</p>
-
-                        {/* Financial KPIs */}
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            {[
-                                { label: "Budget", value: selectedProject.budget > 0 ? formatCurrency(selectedProject.budget) : "Interne" },
-                                { label: "Encaissé", value: formatCurrency(selectedProject.paid) },
-                                { label: "Restant", value: formatCurrency(selectedProject.remaining) },
-                                { label: "Marge", value: `${selectedProject.margin}%` },
-                            ].map((m) => (
-                                <div key={m.label} className="rounded-xl bg-purple-950/30 p-3">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/50">{m.label}</p>
-                                    <p className="mt-1 text-sm font-bold text-white">{m.value}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Hours progress */}
-                        <div>
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-purple-200/60">Heures : {selectedProject.hoursSpent} / {selectedProject.hoursEstimated}</span>
-                                <span className="font-bold text-white">{Math.round((selectedProject.hoursSpent / selectedProject.hoursEstimated) * 100)}%</span>
-                            </div>
-                            <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-purple-950/50">
-                                <div
-                                    className={cn(
-                                        "h-full rounded-full bg-gradient-to-r",
-                                        (selectedProject.hoursSpent / selectedProject.hoursEstimated) > 0.9 ? "from-red-500 to-red-600" : "from-purple-500 to-indigo-500"
-                                    )}
-                                    style={{ width: `${Math.min((selectedProject.hoursSpent / selectedProject.hoursEstimated) * 100, 100)}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Revenue chart */}
-                        <div>
-                            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-purple-300/50">Revenus du projet</h4>
-                            <div className="card-glow rounded-2xl p-4">
-                                <ChartArea data={selectedProject.timeline} dataKey="revenue" xKey="month" color="#8b5cf6" height={200} />
-                            </div>
-                        </div>
-
-                        {/* Milestones */}
-                        <div>
-                            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-purple-300/50">Jalons</h4>
-                            <div className="space-y-2">
-                                {selectedProject.milestones.map((ms, i) => (
-                                    <div key={i} className="flex items-center gap-3 rounded-lg py-1.5">
-                                        {ms.done ? (
-                                            <CheckCircle2 size={18} className="flex-shrink-0 text-emerald-400" />
-                                        ) : (
-                                            <Circle size={18} className="flex-shrink-0 text-purple-500/30" />
-                                        )}
-                                        <span className={cn("text-sm flex-1", ms.done ? "text-purple-200/60 line-through" : "font-medium text-white")}>
-                                            {ms.name}
-                                        </span>
-                                        <span className="text-xs text-purple-300/40">{ms.date}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Recurring badge */}
-                        {selectedProject.monthlyRecurring ? (
-                            <div className="flex items-center gap-3 rounded-2xl bg-cyan-500/5 border border-cyan-500/15 p-4">
-                                <TrendingUp size={18} className="text-cyan-400" />
-                                <div>
-                                    <p className="text-sm font-semibold text-white">Revenu récurrent</p>
-                                    <p className="text-xs text-purple-300/40">Ce projet génère un revenu mensuel actif</p>
-                                </div>
-                                <span className="ml-auto text-lg font-bold text-cyan-400">{formatCurrency(selectedProject.monthlyRecurring)}/mo</span>
-                            </div>
-                        ) : null}
-
-                        {/* Dates */}
-                        <div className="flex items-center gap-4 text-xs text-purple-300/40">
-                            <span>🗓 Démarrage : {selectedProject.startDate}</span>
-                            {selectedProject.endDate && <span>🏁 Livraison : {selectedProject.endDate}</span>}
-                        </div>
-                    </div>
-                )}
-            </Modal>
-
             {/* ─── CLIENT DETAIL MODAL ────────────────────────────── */}
             <Modal
                 open={!!selectedClient}
@@ -439,7 +288,6 @@ export default function NeoFlowPage() {
             >
                 {selectedClient && (
                     <div className="space-y-6">
-                        {/* Status + rating */}
                         <div className="flex items-center gap-3">
                             <span className={cn(
                                 "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide",
@@ -454,7 +302,6 @@ export default function NeoFlowPage() {
                             </div>
                         </div>
 
-                        {/* Metrics */}
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             {[
                                 { label: "Client depuis", value: selectedClient.since },
@@ -469,42 +316,7 @@ export default function NeoFlowPage() {
                             ))}
                         </div>
 
-                        {/* Client projects */}
-                        <div>
-                            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-purple-300/50">Projets avec ce client</h4>
-                            <div className="space-y-2">
-                                {d.projects
-                                    .filter((p) => p.client === selectedClient.name)
-                                    .map((p) => (
-                                        <div
-                                            key={p.id}
-                                            onClick={() => { setSelectedClient(null); setTimeout(() => setSelectedProject(p), 200); }}
-                                            className="flex cursor-pointer items-center justify-between rounded-xl bg-purple-950/20 p-3.5 transition-colors hover:bg-purple-900/20"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Code2 size={16} className="text-purple-400" />
-                                                <div>
-                                                    <p className="text-sm font-semibold text-white">{p.name}</p>
-                                                    <div className="flex gap-1.5 mt-0.5">
-                                                        <span className={cn("rounded-full px-2 py-0.5 text-[9px] font-semibold", typeLabels[p.type].color)}>
-                                                            {typeLabels[p.type].label}
-                                                        </span>
-                                                        <span className={cn("rounded-full px-2 py-0.5 text-[9px] font-semibold", statusLabels[p.status].color)}>
-                                                            {statusLabels[p.status].label}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-bold text-white">{p.budget > 0 ? formatCurrency(p.budget) : "Interne"}</span>
-                                                <ArrowRight size={14} className="text-purple-500/40" />
-                                            </div>
-                                        </div>
-                                    ))}
-                            </div>
-                        </div>
-
-                        {/* Contact */}
+                        {/* Client projects mocked for list */}
                         <div className="space-y-2">
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-300/50">Contact</h4>
                             <div className="flex items-center gap-3 rounded-xl bg-purple-950/30 p-4">

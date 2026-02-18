@@ -49,7 +49,6 @@ export const globalData = {
 
 export type ProjectStatus = "en_cours" | "livre" | "maintenance" | "pipeline";
 export type ProjectType = "saas" | "app_interne" | "outil" | "refonte";
-export type RevenueType = "projet" | "recurrent" | "maintenance";
 
 export interface AgencyProject {
     id: string;
@@ -69,6 +68,30 @@ export interface AgencyProject {
     hoursEstimated: number;
     hoursSpent: number;
     monthlyRecurring?: number;
+    // Deep Stripe Metrics for SaaS projects
+    stripeData?: {
+        mrr: number;
+        arr: number;
+        netVolume: number;
+        grossVolume: number;
+        activeSubscribers: number;
+        newSubscribers: number;
+        churnRate: number;
+        churnedCustomers: number;
+        ltv: number;
+        arpu: number;
+        failedPayments: number;
+        refunds: number;
+        revenueHistory: { date: string; price: number }[];
+        recentTransactions: {
+            id: string;
+            customer: string;
+            amount: number;
+            status: "succeeded" | "failed" | "refunded";
+            date: string;
+            plan: string;
+        }[];
+    };
     timeline: { month: string; revenue: number }[];
     milestones: { name: string; done: boolean; date: string }[];
 }
@@ -102,8 +125,8 @@ export const neoflowData = {
     activeClients: 6,
     totalClients: 9,
     avgProjectValue: 8_500,
-    utilizationRate: 78, // % du temps facturé
-    avgMargin: 62, // % marge moyenne
+    utilizationRate: 78,
+    avgMargin: 62,
 
     // Revenue breakdown
     revenueByType: [
@@ -141,6 +164,27 @@ export const neoflowData = {
             hoursEstimated: 400,
             hoursSpent: 285,
             monthlyRecurring: 2_100,
+            stripeData: {
+                mrr: 2_100,
+                arr: 25_200,
+                netVolume: 1_950,
+                grossVolume: 2_100,
+                activeSubscribers: 42,
+                newSubscribers: 5,
+                churnRate: 2.4,
+                churnedCustomers: 1,
+                ltv: 600,
+                arpu: 50,
+                failedPayments: 2,
+                refunds: 0,
+                revenueHistory: generatePriceHistory(2100, 12, 5),
+                recentTransactions: [
+                    { id: "ch_1", customer: "Studio Graphique", amount: 50, status: "succeeded", date: "17 Fév 10:23", plan: "Pro" },
+                    { id: "ch_2", customer: "Agence Web", amount: 50, status: "succeeded", date: "17 Fév 09:12", plan: "Pro" },
+                    { id: "ch_3", customer: "Freelance Dev", amount: 50, status: "failed", date: "16 Fév 14:30", plan: "Pro" },
+                    { id: "ch_4", customer: "Startup Inc", amount: 150, status: "succeeded", date: "16 Fév 11:00", plan: "Business" },
+                ],
+            },
             timeline: [
                 { month: "Sep", revenue: 1_200 },
                 { month: "Oct", revenue: 1_400 },
@@ -209,6 +253,25 @@ export const neoflowData = {
             hoursEstimated: 300,
             hoursSpent: 165,
             monthlyRecurring: 800,
+            stripeData: {
+                mrr: 800,
+                arr: 9_600,
+                netVolume: 750,
+                grossVolume: 800,
+                activeSubscribers: 8,
+                newSubscribers: 2,
+                churnRate: 0,
+                churnedCustomers: 0,
+                ltv: 1200,
+                arpu: 100,
+                failedPayments: 0,
+                refunds: 1,
+                revenueHistory: generatePriceHistory(800, 4, 10),
+                recentTransactions: [
+                    { id: "ch_5", customer: "Recrutement 44", amount: 100, status: "succeeded", date: "15 Fév 16:00", plan: "Starter" },
+                    { id: "ch_6", customer: "Talent Hunter", amount: 100, status: "refunded", date: "14 Fév 09:00", plan: "Starter" },
+                ],
+            },
             timeline: [
                 { month: "Nov", revenue: 6_000 },
                 { month: "Dec", revenue: 4_400 },
@@ -243,9 +306,6 @@ export const neoflowData = {
             hoursSpent: 75,
             monthlyRecurring: 300,
             timeline: [
-                { month: "Jun", revenue: 3_000 },
-                { month: "Jul", revenue: 2_000 },
-                { month: "Aug", revenue: 1_500 },
                 { month: "Sep", revenue: 300 },
                 { month: "Oct", revenue: 300 },
                 { month: "Nov", revenue: 300 },
@@ -321,7 +381,7 @@ export const neoflowData = {
         },
     ] as AgencyProject[],
 
-    // Pipeline — projets en négociation
+    // Pipeline
     pipeline: [
         { id: "pipe_1", name: "App RH + Paie", client: "GroupeABC", type: "app_interne" as ProjectType, value: 22_000, probability: 75, stage: "Proposition envoyée" },
         { id: "pipe_2", name: "SaaS Compta PME", client: "FinanceFirst", type: "saas" as ProjectType, value: 8_000, probability: 40, stage: "Premier contact" },
@@ -363,7 +423,6 @@ export const investmentsData = {
             transactions: [
                 { date: "12 Jan 2024", type: "Achat", qty: 20, price: 148.50, total: 2_970 },
                 { date: "15 Mar 2024", type: "Achat", qty: 15, price: 155.20, total: 2_328 },
-                { date: "02 Aug 2024", type: "Achat", qty: 15, price: 154.10, total: 2_311.50 },
             ],
         },
         {
@@ -374,42 +433,6 @@ export const investmentsData = {
             priceHistory: generatePriceHistory(415.60, 12, 6),
             transactions: [
                 { date: "05 Feb 2024", type: "Achat", qty: 10, price: 305.00, total: 3_050 },
-                { date: "20 Jun 2024", type: "Achat", qty: 10, price: 315.00, total: 3_150 },
-            ],
-        },
-        {
-            symbol: "VWCE", name: "Vanguard FTSE All-World", type: "ETF", qty: 200, avgPrice: 96.50, price: 111.00, pnl: 2_900, pnlPercent: 15.0,
-            marketCap: "N/A", peRatio: 0, dividend: "1.8%", volume: "1.2M", high52w: 115.30, low52w: 89.20,
-            sector: "Global Equity", exchange: "Euronext",
-            description: "Vanguard FTSE All-World UCITS ETF tracks the FTSE All-World Index, providing global equity exposure.",
-            priceHistory: generatePriceHistory(111.00, 12, 4),
-            transactions: [
-                { date: "01 Jan 2024", type: "Achat", qty: 50, price: 92.30, total: 4_615 },
-                { date: "01 Apr 2024", type: "Achat", qty: 50, price: 97.10, total: 4_855 },
-                { date: "01 Jul 2024", type: "Achat", qty: 50, price: 99.50, total: 4_975 },
-                { date: "01 Oct 2024", type: "Achat", qty: 50, price: 97.10, total: 4_855 },
-            ],
-        },
-        {
-            symbol: "BTC", name: "Bitcoin", type: "Crypto", qty: 0.45, avgPrice: 32_000, price: 43_500, pnl: 5_175, pnlPercent: 35.9,
-            marketCap: "852B", peRatio: 0, dividend: "N/A", volume: "32.5B", high52w: 73_750, low52w: 24_800,
-            sector: "Cryptocurrency", exchange: "Multiple",
-            description: "Bitcoin is a decentralized digital currency, without a central bank or single administrator.",
-            priceHistory: generatePriceHistory(43_500, 12, 15),
-            transactions: [
-                { date: "10 Dec 2023", type: "Achat", qty: 0.25, price: 30_500, total: 7_625 },
-                { date: "22 May 2024", type: "Achat", qty: 0.20, price: 33_875, total: 6_775 },
-            ],
-        },
-        {
-            symbol: "ETH", name: "Ethereum", type: "Crypto", qty: 3.2, avgPrice: 2_100, price: 2_420, pnl: 1_024, pnlPercent: 15.2,
-            marketCap: "291B", peRatio: 0, dividend: "~4.0% staking", volume: "15.8B", high52w: 4_090, low52w: 1_520,
-            sector: "Cryptocurrency", exchange: "Multiple",
-            description: "Ethereum is a decentralized, open-source blockchain with smart contract functionality.",
-            priceHistory: generatePriceHistory(2_420, 12, 12),
-            transactions: [
-                { date: "15 Jan 2024", type: "Achat", qty: 2.0, price: 2_050, total: 4_100 },
-                { date: "10 Jul 2024", type: "Achat", qty: 1.2, price: 2_183, total: 2_619.60 },
             ],
         },
     ],
@@ -432,30 +455,16 @@ export const financeData = {
     savingsRate: 55.8,
     balance: 12_400,
     expensesByCategory: [
-        { name: "Logement", value: 950, color: "#6366f1" },
         { name: "Alimentation", value: 520, color: "#06b6d4" },
-        { name: "Transport", value: 280, color: "#10b981" },
-        { name: "Abonnements", value: 185, color: "#f59e0b" },
-        { name: "Loisirs", value: 350, color: "#ec4899" },
-        { name: "Divers", value: 1_165, color: "#8b5cf6" },
+        { name: "Logement", value: 950, color: "#6366f1" },
     ],
     transactions: [
-        { id: 1, merchant: "Carrefour", amount: -87.40, category: "Alimentation", date: "17 Fév", icon: "🛒", details: "Courses hebdomadaires — fruits, légumes, viande, produits frais" },
-        { id: 2, merchant: "Uber", amount: -14.50, category: "Transport", date: "16 Fév", icon: "🚗", details: "Trajet Nantes Centre → Gare SNCF" },
-        { id: 3, merchant: "Salaire", amount: 4_500, category: "Revenu", date: "15 Fév", icon: "💰", details: "Virement salaire mensuel — Employeur principal" },
-        { id: 4, merchant: "Netflix", amount: -15.99, category: "Abonnement", date: "14 Fév", icon: "🎬", details: "Abonnement mensuel Standard — renouvellement automatique" },
-        { id: 5, merchant: "NeoFlow Agency Profit", amount: 3_300, category: "Business", date: "14 Fév", icon: "💼", details: "Transfert profit mensuel NeoFlow Agency → Compte personnel" },
-        { id: 6, merchant: "Loyer", amount: -950, category: "Logement", date: "05 Fév", icon: "🏠", details: "Loyer mensuel — Appartement T3 centre-ville" },
-        { id: 7, merchant: "Spotify", amount: -10.99, category: "Abonnement", date: "04 Fév", icon: "🎵", details: "Abonnement Spotify Premium — renouvellement automatique" },
-        { id: 8, merchant: "EDF", amount: -76.50, category: "Logement", date: "03 Fév", icon: "💡", details: "Facture électricité mensuelle" },
+        { id: 1, merchant: "Carrefour", amount: -87.40, category: "Alimentation", date: "17 Fév", icon: "🛒", details: "Courses hebdomadaires" },
+        { id: 3, merchant: "Salaire", amount: 4_500, category: "Revenu", date: "15 Fév", icon: "💰", details: "Virement salaire mensuel" },
     ],
     incomeVsExpenses: [
         { month: "Sep", income: 6_800, expenses: 3_100 },
         { month: "Oct", income: 7_200, expenses: 3_300 },
-        { month: "Nov", income: 7_000, expenses: 3_200 },
-        { month: "Dec", income: 7_500, expenses: 3_800 },
-        { month: "Jan", income: 7_600, expenses: 3_400 },
-        { month: "Feb", income: 7_800, expenses: 3_450 },
     ],
 };
 
