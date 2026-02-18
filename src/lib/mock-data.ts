@@ -17,18 +17,19 @@ function generatePriceHistory(basePrice: number, months: number, volatility: num
             price: Math.round(price * 100) / 100,
         });
     }
-    // Make sure last price is close to current
     data[data.length - 1].price = basePrice;
     return data;
 }
 
-// ---------- VUE GLOBALE ----------
+// ═══════════════════════════════════════════════════════════
+// VUE GLOBALE
+// ═══════════════════════════════════════════════════════════
 export const globalData = {
     netWorth: 147_850,
     netWorthChange: 5.3,
     totalCash: 12_400,
     totalInvestments: 89_200,
-    totalBusiness: 46_250,
+    totalAgency: 46_250,
     monthlyIncome: 7_800,
     monthlyExpenses: 3_450,
     savingsRate: 55.8,
@@ -42,98 +43,305 @@ export const globalData = {
     ],
 };
 
-// ---------- NEOFLOW BOS (STRIPE) ----------
+// ═══════════════════════════════════════════════════════════
+// NEOFLOW AGENCY — Agence de développement SaaS/Apps B2B
+// ═══════════════════════════════════════════════════════════
+
+export type ProjectStatus = "en_cours" | "livre" | "maintenance" | "pipeline";
+export type ProjectType = "saas" | "app_interne" | "outil" | "refonte";
+export type RevenueType = "projet" | "recurrent" | "maintenance";
+
+export interface AgencyProject {
+    id: string;
+    name: string;
+    client: string;
+    clientLogo: string;
+    type: ProjectType;
+    status: ProjectStatus;
+    description: string;
+    techStack: string[];
+    startDate: string;
+    endDate?: string;
+    budget: number;
+    paid: number;
+    remaining: number;
+    margin: number;
+    hoursEstimated: number;
+    hoursSpent: number;
+    monthlyRecurring?: number;
+    timeline: { month: string; revenue: number }[];
+    milestones: { name: string; done: boolean; date: string }[];
+}
+
+export interface AgencyClient {
+    id: string;
+    name: string;
+    logo: string;
+    industry: string;
+    contactName: string;
+    contactEmail: string;
+    since: string;
+    totalRevenue: number;
+    activeProjects: number;
+    completedProjects: number;
+    status: "actif" | "inactif";
+    satisfaction: number; // 1-5
+}
+
 export const neoflowData = {
-    mrr: 4_625,
-    mrrChange: 8.2,
-    arr: 55_500,
-    activeSubscribers: 47,
-    newCustomersThisMonth: 5,
-    churnedThisMonth: 2,
-    churnRate: 2.1,
-    ltv: 920,
-    avgRevenuePerUser: 98.4,
+    // KPIs Agence
+    totalRevenue: 46_250,
+    monthlyRevenue: 8_400,
+    recurringRevenue: 3_200,
+    projectRevenue: 5_200,
+    revenueChange: 12.5,
+    activeProjects: 4,
+    completedProjects: 12,
+    pipelineValue: 35_000,
+    pipelineProjects: 3,
+    activeClients: 6,
+    totalClients: 9,
+    avgProjectValue: 8_500,
+    utilizationRate: 78, // % du temps facturé
+    avgMargin: 62, // % marge moyenne
+
+    // Revenue breakdown
+    revenueByType: [
+        { name: "Projets", value: 28_500, color: "#8b5cf6" },
+        { name: "Récurrent (SaaS)", value: 12_750, color: "#06b6d4" },
+        { name: "Maintenance", value: 5_000, color: "#10b981" },
+    ],
+
+    // Revenue history
     revenueHistory: [
-        { month: "Sep", revenue: 3_200, customers: 32 },
-        { month: "Oct", revenue: 3_500, customers: 35 },
-        { month: "Nov", revenue: 3_800, customers: 38 },
-        { month: "Dec", revenue: 4_100, customers: 41 },
-        { month: "Jan", revenue: 4_350, customers: 44 },
-        { month: "Feb", revenue: 4_625, customers: 47 },
+        { month: "Sep", projet: 4_500, recurrent: 2_200, maintenance: 600 },
+        { month: "Oct", projet: 5_200, recurrent: 2_400, maintenance: 700 },
+        { month: "Nov", projet: 6_100, recurrent: 2_500, maintenance: 800 },
+        { month: "Dec", projet: 4_800, recurrent: 2_700, maintenance: 900 },
+        { month: "Jan", projet: 5_800, recurrent: 2_900, maintenance: 1_000 },
+        { month: "Feb", projet: 5_200, recurrent: 3_200, maintenance: 1_100 },
     ],
-    recentEvents: [
-        { id: 1, name: "Studio Créatif", plan: "Pro", amount: 149, type: "new" as const, date: "17 Fév" },
-        { id: 2, name: "DigitalBoost", plan: "Business", amount: 249, type: "new" as const, date: "15 Fév" },
-        { id: 3, name: "WebAgency Paris", plan: "Starter", amount: 49, type: "churned" as const, date: "14 Fév" },
-        { id: 4, name: "MarketingPro", plan: "Pro", amount: 149, type: "new" as const, date: "12 Fév" },
-        { id: 5, name: "FreelanceHub", plan: "Pro", amount: 149, type: "renewed" as const, date: "10 Fév" },
-        { id: 6, name: "DesignLab", plan: "Business", amount: 249, type: "new" as const, date: "08 Fév" },
-    ],
-    customers: [
+
+    // Projects
+    projects: [
         {
-            id: "cus_1",
-            name: "Studio Créatif",
-            email: "contact@studiocrea.fr",
-            plan: "Pro",
-            amount: 149,
-            status: "active" as const,
-            joinDate: "15 Jan 2024",
-            totalPaid: 1_490,
-            invoices: 10,
-            lastPayment: "17 Fév 2025",
-            paymentHistory: [
-                { month: "Sep", amount: 149 },
-                { month: "Oct", amount: 149 },
-                { month: "Nov", amount: 149 },
-                { month: "Dec", amount: 149 },
-                { month: "Jan", amount: 149 },
-                { month: "Feb", amount: 149 },
+            id: "proj_1",
+            name: "BOS Platform",
+            client: "NeoFlow (Interne)",
+            clientLogo: "🚀",
+            type: "saas" as ProjectType,
+            status: "en_cours" as ProjectStatus,
+            description: "Plateforme SaaS de gestion business all-in-one pour les agences et freelances. Facturation, CRM, projet management, analytics.",
+            techStack: ["Next.js", "Supabase", "Stripe", "Vercel"],
+            startDate: "Jan 2024",
+            budget: 0,
+            paid: 0,
+            remaining: 0,
+            margin: 100,
+            hoursEstimated: 400,
+            hoursSpent: 285,
+            monthlyRecurring: 2_100,
+            timeline: [
+                { month: "Sep", revenue: 1_200 },
+                { month: "Oct", revenue: 1_400 },
+                { month: "Nov", revenue: 1_600 },
+                { month: "Dec", revenue: 1_800 },
+                { month: "Jan", revenue: 1_950 },
+                { month: "Feb", revenue: 2_100 },
+            ],
+            milestones: [
+                { name: "MVP Launch", done: true, date: "Mar 2024" },
+                { name: "Stripe Integration", done: true, date: "Mai 2024" },
+                { name: "CRM Module", done: true, date: "Sep 2024" },
+                { name: "Analytics Dashboard", done: true, date: "Dec 2024" },
+                { name: "Mobile App", done: false, date: "Avr 2025" },
+                { name: "AI Features", done: false, date: "Juin 2025" },
             ],
         },
         {
-            id: "cus_2",
-            name: "DigitalBoost",
-            email: "admin@digitalboost.io",
-            plan: "Business",
-            amount: 249,
-            status: "active" as const,
-            joinDate: "03 Mar 2024",
-            totalPaid: 2_988,
-            invoices: 12,
-            lastPayment: "15 Fév 2025",
-            paymentHistory: [
-                { month: "Sep", amount: 249 },
-                { month: "Oct", amount: 249 },
-                { month: "Nov", amount: 249 },
-                { month: "Dec", amount: 249 },
-                { month: "Jan", amount: 249 },
-                { month: "Feb", amount: 249 },
+            id: "proj_2",
+            name: "LogiTrack Pro",
+            client: "TransNantes SARL",
+            clientLogo: "🚛",
+            type: "app_interne" as ProjectType,
+            status: "en_cours" as ProjectStatus,
+            description: "Application interne de gestion logistique : suivi de flotte, planification de tournées, gestion des chauffeurs et reporting temps réel.",
+            techStack: ["React", "Node.js", "PostgreSQL", "Mapbox"],
+            startDate: "Oct 2024",
+            endDate: "Avr 2025",
+            budget: 18_000,
+            paid: 12_000,
+            remaining: 6_000,
+            margin: 58,
+            hoursEstimated: 220,
+            hoursSpent: 145,
+            timeline: [
+                { month: "Oct", revenue: 4_000 },
+                { month: "Nov", revenue: 4_000 },
+                { month: "Dec", revenue: 4_000 },
+                { month: "Jan", revenue: 0 },
+                { month: "Feb", revenue: 0 },
+            ],
+            milestones: [
+                { name: "Cahier des charges", done: true, date: "Oct 2024" },
+                { name: "Maquettes UI/UX", done: true, date: "Nov 2024" },
+                { name: "Module Flotte", done: true, date: "Dec 2024" },
+                { name: "Module Tournées", done: false, date: "Fév 2025" },
+                { name: "Module Reporting", done: false, date: "Mar 2025" },
+                { name: "Livraison finale", done: false, date: "Avr 2025" },
             ],
         },
         {
-            id: "cus_3",
-            name: "WebAgency Paris",
-            email: "billing@webagency.paris",
-            plan: "Starter",
-            amount: 49,
-            status: "churned" as const,
-            joinDate: "20 Jun 2024",
-            totalPaid: 392,
-            invoices: 8,
-            lastPayment: "14 Jan 2025",
-            paymentHistory: [
-                { month: "Sep", amount: 49 },
-                { month: "Oct", amount: 49 },
-                { month: "Nov", amount: 49 },
-                { month: "Dec", amount: 49 },
-                { month: "Jan", amount: 49 },
-                { month: "Feb", amount: 0 },
+            id: "proj_3",
+            name: "RecruteFlow",
+            client: "TalentPulse SAS",
+            clientLogo: "👤",
+            type: "saas" as ProjectType,
+            status: "en_cours" as ProjectStatus,
+            description: "SaaS de recrutement pour PME : publication d'offres multi-canal, suivi candidatures (ATS), scoring IA des CV, onboarding automatisé.",
+            techStack: ["Next.js", "Supabase", "OpenAI API", "Resend"],
+            startDate: "Nov 2024",
+            endDate: "Mai 2025",
+            budget: 24_000,
+            paid: 14_400,
+            remaining: 9_600,
+            margin: 65,
+            hoursEstimated: 300,
+            hoursSpent: 165,
+            monthlyRecurring: 800,
+            timeline: [
+                { month: "Nov", revenue: 6_000 },
+                { month: "Dec", revenue: 4_400 },
+                { month: "Jan", revenue: 4_000 },
+                { month: "Feb", revenue: 800 },
+            ],
+            milestones: [
+                { name: "Architecture & Design", done: true, date: "Nov 2024" },
+                { name: "Core ATS", done: true, date: "Jan 2025" },
+                { name: "AI Scoring", done: true, date: "Fév 2025" },
+                { name: "Multi-channel posting", done: false, date: "Mar 2025" },
+                { name: "Client Beta", done: false, date: "Avr 2025" },
+                { name: "Production Launch", done: false, date: "Mai 2025" },
             ],
         },
+        {
+            id: "proj_4",
+            name: "StockMaster",
+            client: "Boulangerie Moreau",
+            clientLogo: "🥖",
+            type: "outil" as ProjectType,
+            status: "maintenance" as ProjectStatus,
+            description: "Outil de gestion des stocks et commandes fournisseurs pour réseau de 5 boulangeries. Alertes de rupture, commande auto, historique.",
+            techStack: ["React", "Firebase", "Tailwind"],
+            startDate: "Juin 2024",
+            endDate: "Sep 2024",
+            budget: 6_500,
+            paid: 6_500,
+            remaining: 0,
+            margin: 72,
+            hoursEstimated: 80,
+            hoursSpent: 75,
+            monthlyRecurring: 300,
+            timeline: [
+                { month: "Jun", revenue: 3_000 },
+                { month: "Jul", revenue: 2_000 },
+                { month: "Aug", revenue: 1_500 },
+                { month: "Sep", revenue: 300 },
+                { month: "Oct", revenue: 300 },
+                { month: "Nov", revenue: 300 },
+                { month: "Dec", revenue: 300 },
+                { month: "Jan", revenue: 300 },
+                { month: "Feb", revenue: 300 },
+            ],
+            milestones: [
+                { name: "Développement", done: true, date: "Juil 2024" },
+                { name: "Tests & Déploiement", done: true, date: "Août 2024" },
+                { name: "Formation client", done: true, date: "Sep 2024" },
+                { name: "Maintenance mensuelle", done: true, date: "En cours" },
+            ],
+        },
+        {
+            id: "proj_5",
+            name: "CRM Immo+",
+            client: "Immobilière de l'Ouest",
+            clientLogo: "🏠",
+            type: "refonte" as ProjectType,
+            status: "livre" as ProjectStatus,
+            description: "Refonte complète du CRM immobilier : gestion des biens, matching acheteur/vendeur, signature électronique, portail client.",
+            techStack: ["Vue.js", "Laravel", "MySQL", "DocuSign API"],
+            startDate: "Mar 2024",
+            endDate: "Août 2024",
+            budget: 15_000,
+            paid: 15_000,
+            remaining: 0,
+            margin: 55,
+            hoursEstimated: 200,
+            hoursSpent: 210,
+            timeline: [
+                { month: "Mar", revenue: 5_000 },
+                { month: "Avr", revenue: 4_000 },
+                { month: "Mai", revenue: 3_000 },
+                { month: "Jun", revenue: 2_000 },
+                { month: "Jul", revenue: 1_000 },
+            ],
+            milestones: [
+                { name: "Audit existant", done: true, date: "Mar 2024" },
+                { name: "Nouvelle architecture", done: true, date: "Avr 2024" },
+                { name: "Migration données", done: true, date: "Jun 2024" },
+                { name: "Formation & Go-Live", done: true, date: "Août 2024" },
+            ],
+        },
+        {
+            id: "proj_6",
+            name: "FactureExpress",
+            client: "Cabinet Durand & Associés",
+            clientLogo: "⚖️",
+            type: "outil" as ProjectType,
+            status: "livre" as ProjectStatus,
+            description: "Outil de facturation et suivi des temps pour cabinet d'avocats. Ventilation par dossier, exports comptables, rappels automatiques.",
+            techStack: ["Next.js", "Prisma", "PostgreSQL"],
+            startDate: "Jan 2024",
+            endDate: "Mar 2024",
+            budget: 5_500,
+            paid: 5_500,
+            remaining: 0,
+            margin: 68,
+            hoursEstimated: 70,
+            hoursSpent: 65,
+            monthlyRecurring: 0,
+            timeline: [
+                { month: "Jan", revenue: 2_500 },
+                { month: "Feb", revenue: 2_000 },
+                { month: "Mar", revenue: 1_000 },
+            ],
+            milestones: [
+                { name: "Développement", done: true, date: "Fév 2024" },
+                { name: "Livraison", done: true, date: "Mar 2024" },
+            ],
+        },
+    ] as AgencyProject[],
+
+    // Pipeline — projets en négociation
+    pipeline: [
+        { id: "pipe_1", name: "App RH + Paie", client: "GroupeABC", type: "app_interne" as ProjectType, value: 22_000, probability: 75, stage: "Proposition envoyée" },
+        { id: "pipe_2", name: "SaaS Compta PME", client: "FinanceFirst", type: "saas" as ProjectType, value: 8_000, probability: 40, stage: "Premier contact" },
+        { id: "pipe_3", name: "Portail Fournisseur", client: "NantesLogistic", type: "outil" as ProjectType, value: 5_000, probability: 90, stage: "Contrat en cours" },
     ],
+
+    // Clients
+    clients: [
+        { id: "cli_1", name: "NeoFlow (Interne)", logo: "🚀", industry: "Tech / SaaS", contactName: "Noakim Grelier", contactEmail: "noakim@neoflow.agency", since: "Jan 2024", totalRevenue: 12_600, activeProjects: 1, completedProjects: 0, status: "actif" as const, satisfaction: 5 },
+        { id: "cli_2", name: "TransNantes SARL", logo: "🚛", industry: "Logistique / Transport", contactName: "Marc Dubois", contactEmail: "m.dubois@transnantes.fr", since: "Oct 2024", totalRevenue: 12_000, activeProjects: 1, completedProjects: 0, status: "actif" as const, satisfaction: 4 },
+        { id: "cli_3", name: "TalentPulse SAS", logo: "👤", industry: "Ressources Humaines", contactName: "Sophie Martin", contactEmail: "s.martin@talentpulse.io", since: "Nov 2024", totalRevenue: 14_400, activeProjects: 1, completedProjects: 0, status: "actif" as const, satisfaction: 5 },
+        { id: "cli_4", name: "Boulangerie Moreau", logo: "🥖", industry: "Alimentaire / Retail", contactName: "Jean Moreau", contactEmail: "contact@moreau-boulanger.fr", since: "Juin 2024", totalRevenue: 6_500, activeProjects: 0, completedProjects: 1, status: "actif" as const, satisfaction: 5 },
+        { id: "cli_5", name: "Immobilière de l'Ouest", logo: "🏠", industry: "Immobilier", contactName: "Claire Lefèvre", contactEmail: "c.lefevre@immo-ouest.fr", since: "Mar 2024", totalRevenue: 15_000, activeProjects: 0, completedProjects: 1, status: "inactif" as const, satisfaction: 4 },
+        { id: "cli_6", name: "Cabinet Durand & Associés", logo: "⚖️", industry: "Juridique", contactName: "Pierre Durand", contactEmail: "p.durand@durand-associes.fr", since: "Jan 2024", totalRevenue: 5_500, activeProjects: 0, completedProjects: 1, status: "inactif" as const, satisfaction: 4 },
+    ] as AgencyClient[],
 };
 
-// ---------- INVESTISSEMENTS ----------
+// ═══════════════════════════════════════════════════════════
+// INVESTISSEMENTS
+// ═══════════════════════════════════════════════════════════
 export const investmentsData = {
     totalValue: 89_200,
     totalPnl: 12_450,
@@ -147,22 +355,9 @@ export const investmentsData = {
     ],
     positions: [
         {
-            symbol: "AAPL",
-            name: "Apple Inc.",
-            type: "Action",
-            qty: 50,
-            avgPrice: 152.30,
-            price: 178.50,
-            pnl: 1_310,
-            pnlPercent: 17.2,
-            marketCap: "2.89T",
-            peRatio: 28.5,
-            dividend: "0.52%",
-            volume: "58.2M",
-            high52w: 199.62,
-            low52w: 143.90,
-            sector: "Technology",
-            exchange: "NASDAQ",
+            symbol: "AAPL", name: "Apple Inc.", type: "Action", qty: 50, avgPrice: 152.30, price: 178.50, pnl: 1_310, pnlPercent: 17.2,
+            marketCap: "2.89T", peRatio: 28.5, dividend: "0.52%", volume: "58.2M", high52w: 199.62, low52w: 143.90,
+            sector: "Technology", exchange: "NASDAQ",
             description: "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.",
             priceHistory: generatePriceHistory(178.50, 12, 8),
             transactions: [
@@ -172,22 +367,9 @@ export const investmentsData = {
             ],
         },
         {
-            symbol: "MSFT",
-            name: "Microsoft Corp.",
-            type: "Action",
-            qty: 20,
-            avgPrice: 310.00,
-            price: 415.60,
-            pnl: 2_112,
-            pnlPercent: 34.1,
-            marketCap: "3.09T",
-            peRatio: 34.2,
-            dividend: "0.74%",
-            volume: "22.1M",
-            high52w: 430.82,
-            low52w: 309.45,
-            sector: "Technology",
-            exchange: "NASDAQ",
+            symbol: "MSFT", name: "Microsoft Corp.", type: "Action", qty: 20, avgPrice: 310.00, price: 415.60, pnl: 2_112, pnlPercent: 34.1,
+            marketCap: "3.09T", peRatio: 34.2, dividend: "0.74%", volume: "22.1M", high52w: 430.82, low52w: 309.45,
+            sector: "Technology", exchange: "NASDAQ",
             description: "Microsoft Corporation develops and supports software, services, devices and solutions worldwide.",
             priceHistory: generatePriceHistory(415.60, 12, 6),
             transactions: [
@@ -196,23 +378,10 @@ export const investmentsData = {
             ],
         },
         {
-            symbol: "VWCE",
-            name: "Vanguard FTSE All-World",
-            type: "ETF",
-            qty: 200,
-            avgPrice: 96.50,
-            price: 111.00,
-            pnl: 2_900,
-            pnlPercent: 15.0,
-            marketCap: "N/A",
-            peRatio: 0,
-            dividend: "1.8%",
-            volume: "1.2M",
-            high52w: 115.30,
-            low52w: 89.20,
-            sector: "Global Equity",
-            exchange: "Euronext",
-            description: "Vanguard FTSE All-World UCITS ETF tracks the performance of the FTSE All-World Index, providing exposure to large- and mid-cap equities worldwide.",
+            symbol: "VWCE", name: "Vanguard FTSE All-World", type: "ETF", qty: 200, avgPrice: 96.50, price: 111.00, pnl: 2_900, pnlPercent: 15.0,
+            marketCap: "N/A", peRatio: 0, dividend: "1.8%", volume: "1.2M", high52w: 115.30, low52w: 89.20,
+            sector: "Global Equity", exchange: "Euronext",
+            description: "Vanguard FTSE All-World UCITS ETF tracks the FTSE All-World Index, providing global equity exposure.",
             priceHistory: generatePriceHistory(111.00, 12, 4),
             transactions: [
                 { date: "01 Jan 2024", type: "Achat", qty: 50, price: 92.30, total: 4_615 },
@@ -222,23 +391,10 @@ export const investmentsData = {
             ],
         },
         {
-            symbol: "BTC",
-            name: "Bitcoin",
-            type: "Crypto",
-            qty: 0.45,
-            avgPrice: 32_000,
-            price: 43_500,
-            pnl: 5_175,
-            pnlPercent: 35.9,
-            marketCap: "852B",
-            peRatio: 0,
-            dividend: "N/A",
-            volume: "32.5B",
-            high52w: 73_750,
-            low52w: 24_800,
-            sector: "Cryptocurrency",
-            exchange: "Multiple",
-            description: "Bitcoin is a decentralized digital currency, without a central bank or single administrator, that can be sent from user to user on the peer-to-peer bitcoin network.",
+            symbol: "BTC", name: "Bitcoin", type: "Crypto", qty: 0.45, avgPrice: 32_000, price: 43_500, pnl: 5_175, pnlPercent: 35.9,
+            marketCap: "852B", peRatio: 0, dividend: "N/A", volume: "32.5B", high52w: 73_750, low52w: 24_800,
+            sector: "Cryptocurrency", exchange: "Multiple",
+            description: "Bitcoin is a decentralized digital currency, without a central bank or single administrator.",
             priceHistory: generatePriceHistory(43_500, 12, 15),
             transactions: [
                 { date: "10 Dec 2023", type: "Achat", qty: 0.25, price: 30_500, total: 7_625 },
@@ -246,23 +402,10 @@ export const investmentsData = {
             ],
         },
         {
-            symbol: "ETH",
-            name: "Ethereum",
-            type: "Crypto",
-            qty: 3.2,
-            avgPrice: 2_100,
-            price: 2_420,
-            pnl: 1_024,
-            pnlPercent: 15.2,
-            marketCap: "291B",
-            peRatio: 0,
-            dividend: "~4.0% staking",
-            volume: "15.8B",
-            high52w: 4_090,
-            low52w: 1_520,
-            sector: "Cryptocurrency",
-            exchange: "Multiple",
-            description: "Ethereum is a decentralized, open-source blockchain with smart contract functionality. Ether is the native cryptocurrency of the platform.",
+            symbol: "ETH", name: "Ethereum", type: "Crypto", qty: 3.2, avgPrice: 2_100, price: 2_420, pnl: 1_024, pnlPercent: 15.2,
+            marketCap: "291B", peRatio: 0, dividend: "~4.0% staking", volume: "15.8B", high52w: 4_090, low52w: 1_520,
+            sector: "Cryptocurrency", exchange: "Multiple",
+            description: "Ethereum is a decentralized, open-source blockchain with smart contract functionality.",
             priceHistory: generatePriceHistory(2_420, 12, 12),
             transactions: [
                 { date: "15 Jan 2024", type: "Achat", qty: 2.0, price: 2_050, total: 4_100 },
@@ -280,7 +423,9 @@ export const investmentsData = {
     ],
 };
 
-// ---------- FINANCES PERSONNELLES ----------
+// ═══════════════════════════════════════════════════════════
+// FINANCES PERSONNELLES
+// ═══════════════════════════════════════════════════════════
 export const financeData = {
     monthlyIncome: 7_800,
     monthlyExpenses: 3_450,
@@ -299,10 +444,10 @@ export const financeData = {
         { id: 2, merchant: "Uber", amount: -14.50, category: "Transport", date: "16 Fév", icon: "🚗", details: "Trajet Nantes Centre → Gare SNCF" },
         { id: 3, merchant: "Salaire", amount: 4_500, category: "Revenu", date: "15 Fév", icon: "💰", details: "Virement salaire mensuel — Employeur principal" },
         { id: 4, merchant: "Netflix", amount: -15.99, category: "Abonnement", date: "14 Fév", icon: "🎬", details: "Abonnement mensuel Standard — renouvellement automatique" },
-        { id: 5, merchant: "NeoFlow BOS Profit", amount: 3_300, category: "Business", date: "14 Fév", icon: "💼", details: "Transfert profit mensuel NeoFlow BOS (SaaS) → Compte personnel" },
+        { id: 5, merchant: "NeoFlow Agency Profit", amount: 3_300, category: "Business", date: "14 Fév", icon: "💼", details: "Transfert profit mensuel NeoFlow Agency → Compte personnel" },
         { id: 6, merchant: "Loyer", amount: -950, category: "Logement", date: "05 Fév", icon: "🏠", details: "Loyer mensuel — Appartement T3 centre-ville" },
         { id: 7, merchant: "Spotify", amount: -10.99, category: "Abonnement", date: "04 Fév", icon: "🎵", details: "Abonnement Spotify Premium — renouvellement automatique" },
-        { id: 8, merchant: "EDF", amount: -76.50, category: "Logement", date: "03 Fév", icon: "💡", details: "Facture électricité mensuelle — Contrat Heures Pleines/Creuses" },
+        { id: 8, merchant: "EDF", amount: -76.50, category: "Logement", date: "03 Fév", icon: "💡", details: "Facture électricité mensuelle" },
     ],
     incomeVsExpenses: [
         { month: "Sep", income: 6_800, expenses: 3_100 },
@@ -316,6 +461,4 @@ export const financeData = {
 
 // Type exports
 export type Position = (typeof investmentsData.positions)[number];
-export type Customer = (typeof neoflowData.customers)[number];
 export type Transaction = (typeof financeData.transactions)[number];
-export type NeoflowEvent = (typeof neoflowData.recentEvents)[number];
