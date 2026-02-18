@@ -15,17 +15,12 @@ export default function Card({
     className?: string;
 }) {
     return (
-        <div
-            className={cn(
-                "rounded-2xl border border-zinc-800/60 bg-[#1a1b23] p-6",
-                className
-            )}
-        >
+        <div className={cn("card-glow rounded-2xl p-6 transition-all duration-300", className)}>
             {(title || action) && (
                 <div className="mb-5 flex items-center justify-between">
                     <div>
-                        {title && <h3 className="text-sm font-semibold text-zinc-200">{title}</h3>}
-                        {subtitle && <p className="mt-0.5 text-xs text-zinc-500">{subtitle}</p>}
+                        {title && <h3 className="text-sm font-semibold text-purple-100">{title}</h3>}
+                        {subtitle && <p className="mt-0.5 text-xs text-purple-300/50">{subtitle}</p>}
                     </div>
                     {action}
                 </div>
