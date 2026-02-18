@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { neoflowData, type AgencyProject } from "@/lib/mock-data";
 import { formatCurrency, formatPercent, cn } from "@/lib/utils";
 import KpiCard from "@/components/kpi-card";
@@ -20,6 +21,7 @@ import {
     CheckCircle2,
     AlertCircle,
     ExternalLink,
+    Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,12 +29,52 @@ import { notFound } from "next/navigation";
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
     const project = neoflowData.projects.find((p) => p.id === params.id);
 
+    // Real Stripe Data State
+    const [stripeData, setStripeData] = useState<any>(project?.stripeData || null);
+    const [loadingStripe, setLoadingStripe] = useState(false);
+    const [isRealData, setIsRealData] = useState(false);
+
+    // Fetch real data on load if SaaS
+    useEffect(() => {
+        if (project?.type === "saas") {
+            setLoadingStripe(true);
+            fetch(`/api/neoflow/${params.id}/stripe`)
+                .then((res) => {
+                    if (!res.ok) throw new Error("API Route error");
+                    return res.json();
+                })
+                .then((data) => {
+                    if (!data || data.error) return; // Keep mock data if API fails or returns error
+
+                    setIsRealData(true);
+                    // Merge real stats with existing structure
+                    // Note: Full history/churn requires more complex Stripe queries not in simple API route
+                    setStripeData((prev: any) => ({
+                        ...prev,
+                        mrr: data.mrr,
+                        activeSubscribers: data.activeSubs,
+                        netVolume: data.volume30d,
+                        recentTransactions: data.recentCharges.map((c: any) => ({
+                            id: c.id,
+                            customer: c.customer,
+                            amount: c.amount,
+                            status: c.status,
+                            date: c.date,
+                            plan: "Stripe Charge", // Default label
+                        })),
+                    }));
+                })
+                .catch((err) => console.warn("Using mock Stripe data (API fetch failed or no keys):", err))
+                .finally(() => setLoadingStripe(false));
+        }
+    }, [params.id, project?.type]);
+
     if (!project) {
         notFound();
     }
 
     const isSaaS = project.type === "saas";
-    const stripe = project.stripeData;
+    const stripe = stripeData;
 
     return (
         <div className="space-y-6">
@@ -50,6 +92,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                     </h1>
                     <p className="text-sm text-purple-300/50 flex items-center gap-1.5">
                         {project.client} · <span className="uppercase">{project.type.replace("_", " ")}</span>
+                        {isSaaS && (
+                            <span className={cn(
+                                "ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide border",
+                                isRealData
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                            )}>
+                                {loadingStripe ? "Loading..." : isRealData ? "Live Data" : "Mock Data"}
+                            </span>
+                        )}
                     </p>
                 </div>
                 <div className="ml-auto flex gap-2">
@@ -98,7 +150,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
                     <div className="grid gap-4 lg:grid-cols-3">
                         <Card title="Revenus Récurrents (MRR)" subtitle="12 derniers mois" className="lg:col-span-2">
-                            <ChartArea data={stripe.revenueHistory} color="#635bff" height={280} />
+                            <ChartArea data={stripe.revenueHistory || []} color="#635bff" height={280} />
                         </Card>
                         <Card title="Santé des Paiements">
                             <div className="space-y-4 pt-2">
@@ -129,9 +181,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                         </Card>
                     </div>
 
-                    <Card title="Dernières Transactions live" subtitle="Flux Stripe en temps réel">
+                    <Card title="Dernières Transactions live" subtitle={isRealData ? "Flux Stripe Réel" : "Mode Test Mocké"}>
                         <div className="divide-y divide-purple-800/20">
-                            {stripe.recentTransactions.map((tx) => (
+                            {stripe.recentTransactions.map((tx: any) => (
                                 <div key={tx.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
